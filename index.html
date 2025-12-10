@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Slap the Mosquito – Enhanced</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle at top, #ffecb3, #f5f5f5);
+    }
+
+    .game-wrapper {
+      background: #ffffff;
+      padding: 24px 28px;
+      border-radius: 20px;
+      box-shadow: 0 18px 45px rgba(0, 0, 0, 0.12);
+      max-width: 620px;
+      width: 100%;
+    }
+
+    .game-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .title-block h1 {
+      font-size: 24px;
+      font-weight: 700;
+    }
+
+    .title-block p {
+      font-size: 13px;
+      color: #666;
+      margin-top: 4px;
+    }
+
+    .stats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      font-size: 13px;
+      justify-content: flex-end;
+    }
+
+    .badge {
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: #f3f4ff;
+      font-weight: 600;
+      border: 1px solid #e5e7eb;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      white-space: nowrap;
+    }
+
+    .badge span.value {
+      font-weight: 800;
+      color: #4338ca;
+    }
+
+    #start-btn {
+      margin-top: 8px;
+      padding: 8px 16px;
+      border-radius: 999px;
+      border: none;
+      background: linear-gradient(135deg, #f97316, #ec4899);
+      color: #fff;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      box-shadow: 0 10px 20px rgba(244, 114, 182, 0.4);
+      transition: transform 0.12s ease, box-shadow 0.12s ease, opacity 0.12s ease;
+    }
+
+    #start-btn:disabled {
+      opacity: 0.7;
+      cursor: default;
+      box-shadow: none;
+    }
+
+    #start-btn:not(:disabled):hover {
+      transform: translateY(-1px);
+      box-shadow: 0 14px 30px rgba(244, 114, 182, 0.55);
+    }
+
+    #start-btn:not(:disabled):active {
+      transform: translateY(1px) scale(0.98);
+      box-shadow: 0 4px 12px rgba(244, 114, 182, 0.35);
+    }
+
+    .game-area {
+      margin-top: 16px;
+      border-radius: 18px;
+      background: repeating-linear-gradient(
+        45deg,
+        #f9fafb,
+        #f9fafb 12px,
+        #f3f4f6 12px,
+        #f3f4f6 24px
+      );
+      border: 1px solid #e5e7eb;
+      height: 320px;
+      position: relative;
+      overflow: hidden;
+      cursor: crosshair;
+      transition: box-shadow 0.1s ease, transform 0.1s ease;
+    }
+
+    .game-area.shake {
+      transform: translateX(-2px);
+      box-shadow: 0 0 0 2px rgba(248, 113, 113, 0.7);
+    }
+
+    .hint {
+      font-size: 12px;
+      color: #6b7280;
+      margin-top: 6px;
+    }
+
+    .status {
+      margin-top: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #4b5563;
+      min-height: 20px;
+      transition: color 0.12s ease;
+    }
+
+    .status.good {
+      color: #16a34a;
+    }
+
+    .status.miss {
+      color: #dc2626;
+    }
+
+    .mosquito {
+      position: absolute;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      background: radial-gradient(circle at 30% 30%, #fbbf24, #f97316);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.28);
+      user-select: none;
+      cursor: pointer;
+      transition: transform 0.12s ease, opacity 0.12s ease;
+      animation: buzz 0.4s infinite alternate;
+    }
+
+    .mosquito span {
+      font-size: 24px;
+      transform: translateY(-1px);
+    }
+
+    .mosquito:hover {
+      transform: scale(1.15) rotate(4deg);
+    }
+
+    .mosquito.pop {
+      transform: scale(0);
+      opacity: 0;
+      animation: none;
+    }
+
+    @keyframes buzz {
+      from {
+        transform: translateX(-1px);
+      }
+      to {
+        transform: translateX(1px);
+      }
+    }
+
+    @media (max-width: 700px) {
+      .game-wrapper {
+        margin: 10px;
+        padding: 18px 18px;
+      }
+      .game-area {
+        height: 260px;
+      }
+      .title-block h1 {
+        font-size: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="game-wrapper">
+    <div class="game-header">
+      <div class="title-block">
+        <h1>Slap the Mosquito 🦟</h1>
+        <p>30 seconds. 3 lives. Don’t let the mosquitoes roast you.</p>
+        <button id="start-btn">Start Game</button>
+      </div>
+      <div class="stats">
+        <div class="badge">
+          Score:
+          <span id="score" class="value">0</span>
+        </div>
+        <div class="badge">
+          Time:
+          <span id="time" class="value">30</span>s
+        </div>
+        <div class="badge">
+          Lives:
+          <span id="lives" class="value">❤❤❤</span>
+        </div>
+        <div class="badge">
+          Accuracy:
+          <span id="accuracy" class="value">100%</span>
+        </div>
+        <div class="badge">
+          Best combo:
+          <span id="best-combo" class="value">0</span>
+        </div>
+      </div>
+    </div>
+
+    <div id="game-area" class="game-area"></div>
+    <p class="hint">
+      Hit mosquitoes → score & combo.  
+      Click on empty space → you lose a life. Aim, but fast.
+    </p>
+    <div id="status" class="status"></div>
+  </div>
+
+  <script>
+    const startBtn = document.getElementById("start-btn");
+    const scoreEl = document.getElementById("score");
+    const timeEl = document.getElementById("time");
+    const gameArea = document.getElementById("game-area");
+    const statusEl = document.getElementById("status");
+    const livesEl = document.getElementById("lives");
+    const accuracyEl = document.getElementById("accuracy");
+    const bestComboEl = document.getElementById("best-combo");
+
+    let score = 0;
+    let timeLeft = 30;
+    let countdownInterval = null;
+    let gameActive = false;
+
+    let lives = 3;
+    let hits = 0;
+    let totalClicks = 0;
+    let combo = 0;
+    let bestCombo = 0;
+
+    // Reset the game state
+    function resetGameState() {
+      score = 0;
+      timeLeft = 30;
+      lives = 3;
+      hits = 0;
+      totalClicks = 0;
+      combo = 0;
+      bestCombo = 0;
+
+      scoreEl.textContent = score;
+      timeEl.textContent = timeLeft;
+      livesEl.textContent = "❤❤❤";
+      accuracyEl.textContent = "100%";
+      bestComboEl.textContent = bestCombo;
+
+      gameArea.innerHTML = "";
+      statusEl.textContent = "";
+      statusEl.className = "status";
+    }
+
+    function updateAccuracy() {
+      if (totalClicks === 0) {
+        accuracyEl.textContent = "100%";
+        return;
+      }
+      const acc = (hits / totalClicks) * 100;
+      accuracyEl.textContent = acc.toFixed(0) + "%";
+    }
+
+    function updateLivesUI() {
+      livesEl.textContent = lives > 0 ? "❤".repeat(lives) : "☠️";
+    }
+
+    function flashStatus(message, type) {
+      statusEl.textContent = message;
+      statusEl.className = "status " + (type || "");
+      setTimeout(() => {
+        statusEl.className = "status";
+      }, 600);
+    }
+
+    function shakeGameArea() {
+      gameArea.classList.add("shake");
+      setTimeout(() => {
+        gameArea.classList.remove("shake");
+      }, 120);
+    }
+
+    function startGame() {
+      if (gameActive) return;
+      gameActive = true;
+      resetGameState();
+
+      startBtn.disabled = true;
+      startBtn.textContent = "Playing...";
+
+      flashStatus("Ready... Go slap them!", "good");
+
+      // Countdown timer
+      countdownInterval = setInterval(() => {
+        timeLeft--;
+        timeEl.textContent = timeLeft;
+        if (timeLeft <= 0) {
+          endGame("time");
+        }
+      }, 1000);
+
+      // Start spawning mosquitoes
+      scheduleNextSpawn();
+      // Start with a few quickly
+      for (let i = 0; i < 3; i++) {
+        setTimeout(spawnMosquito, 120 * i);
+      }
+    }
+
+    function endGame(reason) {
+      if (!gameActive) return;
+      gameActive = false;
+
+      clearInterval(countdownInterval);
+      countdownInterval = null;
+
+      gameArea.innerHTML = "";
+      startBtn.disabled = false;
+      startBtn.textContent = "Play Again";
+
+      let message;
+      const finalAcc = accuracyEl.textContent;
+      if (reason === "lives") {
+        message = `You ran out of lives. Score: ${score}, Accuracy: ${finalAcc}, Best combo: ${bestCombo}. Mosquitoes are proud of you (in a bad way).`;
+      } else {
+        if (score === 0) {
+          message = "Timer over. You slapped only oxygen. Mosquitoes: 1, You: 0.";
+        } else if (score < 10) {
+          message = `Score: ${score}, Accuracy: ${finalAcc}. Mosquitoes are still gossiping about you.`;
+        } else if (score < 20) {
+          message = `Nice! Score: ${score}, Accuracy: ${finalAcc}, Best combo: ${bestCombo}. Mosquito population is nervous.`;
+        } else {
+          message = `OP player! Score: ${score}, Accuracy: ${finalAcc}, Best combo: ${bestCombo}. Mosquitoes filed an FIR.`;
+        }
+      }
+
+      flashStatus(message, "good");
+    }
+
+    function scheduleNextSpawn() {
+      if (!gameActive) return;
+      // Dynamic difficulty: higher score = faster spawn (min 250ms)
+      const delay = Math.max(250, 950 - score * 25);
+      setTimeout(() => {
+        if (!gameActive) return;
+        spawnMosquito();
+        scheduleNextSpawn();
+      }, delay);
+    }
+
+    function spawnMosquito() {
+      if (!gameActive) return;
+
+      const mosquito = document.createElement("div");
+      mosquito.className = "mosquito";
+
+      const size = 32 + Math.random() * 24;
+      mosquito.style.width = size + "px";
+      mosquito.style.height = size + "px";
+
+      const maxX = gameArea.clientWidth - size - 4;
+      const maxY = gameArea.clientHeight - size - 4;
+
+      const x = Math.random() * maxX;
+      const y = Math.random() * maxY;
+
+      mosquito.style.left = x + "px";
+      mosquito.style.top = y + "px";
+
+      // Random emoji for extra fun
+      const faces = ["🦟", "🪰", "😈", "🤏"];
+      mosquito.innerHTML = `<span>${faces[Math.floor(Math.random() * faces.length)]}</span>`;
+
+      mosquito.addEventListener("click", (event) => {
+        if (!gameActive) return;
+        event.stopPropagation(); // Prevent counting as a miss
+
+        score++;
+        hits++;
+        totalClicks++;
+        combo++;
+        bestCombo = Math.max(bestCombo, combo);
+
+        scoreEl.textContent = score;
+        bestComboEl.textContent = bestCombo;
+        updateAccuracy();
+
+        const praise = [
+          "Nice slap!",
+          "Clean hit!",
+          "Mosquito deleted.",
+          "Perfect aim!",
+          "Combo going brrr..."
+        ];
+        flashStatus(praise[Math.floor(Math.random() * praise.length)], "good");
+
+        mosquito.classList.add("pop");
+        setTimeout(() => mosquito.remove(), 150);
+      });
+
+      gameArea.appendChild(mosquito);
+
+      // Auto-remove if not clicked in time
+      setTimeout(() => {
+        if (mosquito.parentElement && gameActive) {
+          mosquito.remove();
+          // breaking combo if you miss the mosquito (no click)
+          combo = 0;
+        }
+      }, 1000 + Math.random() * 500);
+    }
+
+    // Miss click on empty area
+    gameArea.addEventListener("click", () => {
+      if (!gameActive) return;
+      totalClicks++;
+      updateAccuracy();
+      lives--;
+      combo = 0;
+      updateLivesUI();
+      flashStatus("You slapped the wall. -1 life.", "miss");
+      shakeGameArea();
+      if (lives <= 0) {
+        endGame("lives");
+      }
+    });
+
+    startBtn.addEventListener("click", startGame);
+  </script>
+</body>
+</html>
